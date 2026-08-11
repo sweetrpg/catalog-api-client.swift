@@ -75,4 +75,100 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(attrs.displayRating, 4.5)
     XCTAssertEqual(attrs.displayText, "Great book")
   }
+
+  // MARK: - Volume write models
+
+  func testPatchVolumeRequestBodyEncodesOnlyProvidedFields() throws {
+    // Swift's synthesized Encodable uses encodeIfPresent for Optional properties, so nil
+    // fields are omitted from the JSON entirely rather than written as `null` - either shape
+    // decodes to nil on catalog-api's Go side (an absent key and a JSON null both unmarshal to
+    // a nil *string), so this just documents the actual wire shape.
+    let body = PatchVolumeRequestBody(title: "New Title", description: nil, notes: nil)
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertEqual(decoded?["title"] as? String, "New Title")
+    XCTAssertNil(decoded?["description"])
+    XCTAssertNil(decoded?["notes"])
+  }
+
+  func testAcceptProposalRequestBodyOmittedFieldsMeansAcceptAll() throws {
+    let body = AcceptProposalRequestBody(fields: nil)
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertNil(decoded?["fields"])
+  }
+
+  func testAcceptProposalRequestBodyEncodesFieldSubset() throws {
+    let body = AcceptProposalRequestBody(fields: ["title"])
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertEqual(decoded?["fields"] as? [String], ["title"])
+  }
+
+  func testVolumePatchResultDecodesAppliedResponse() throws {
+    let json = """
+      {"data": {"id": "vol-1", "type": "volumes", "attributes": {"title": "Edited", "description": "d", "notes": null, "tags": null}, "relationships": null}}
+      """
+    let doc: VolumeDocument = try CatalogAPIClient.decodeFirstLine(Data(json.utf8))
+    XCTAssertEqual(doc.data.id, "vol-1")
+    XCTAssertEqual(doc.data.attributes.title, "Edited")
+  }
+
+  func testProposedChangeSubmissionDecodes() throws {
+    let json = """
+      {"proposalId": "abc123", "status": "pending", "message": "Change proposed for review"}
+      """
+    let submission = try JSONDecoder().decode(ProposedChangeSubmission.self, from: Data(json.utf8))
+    XCTAssertEqual(submission.proposalId, "abc123")
+    XCTAssertEqual(submission.status, "pending")
+  }
+
+  func testProposedChangeSummaryDecodesWithISO8601Dates() throws {
+    let json = """
+      {
+        "id": "prop-1",
+        "recordType": "volume",
+        "recordId": "vol-1",
+        "diff": {"title": {"old": "Old", "new": "New", "status": "pending"}},
+        "status": "pending",
+        "submittedBy": "auth0|submitter",
+        "submittedAt": "2026-08-11T05:00:00Z",
+        "reviewedBy": null,
+        "reviewedAt": null,
+        "reviewNote": null
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let summary = try decoder.decode(ProposedChangeSummary.self, from: Data(json.utf8))
+    XCTAssertEqual(summary.id, "prop-1")
+    XCTAssertEqual(summary.diff["title"]?.old, "Old")
+    XCTAssertEqual(summary.diff["title"]?.new, "New")
+    XCTAssertNil(summary.reviewedAt)
+  }
+
+  func testReviewProposalResultDecodesConflicts() throws {
+    let json = """
+      {"proposalId": "prop-1", "status": "pending", "applied": [], "rejected": [], "conflicts": ["title"]}
+      """
+    let result = try JSONDecoder().decode(ReviewProposalResult.self, from: Data(json.utf8))
+    XCTAssertEqual(result.conflicts, ["title"])
+    XCTAssertEqual(result.applied, [])
+  }
+
+  func testDecodeErrorParsesCatalogAPIErrorBody() {
+    let json = """
+      {"error": "already_reviewed", "message": "This proposed change has already been reviewed"}
+      """
+    let error = CatalogAPIClient.decodeError(Data(json.utf8), statusCode: 409)
+    XCTAssertEqual(error.statusCode, 409)
+    XCTAssertEqual(error.error, "already_reviewed")
+    XCTAssertEqual(error.message, "This proposed change has already been reviewed")
+  }
+
+  func testDecodeErrorFallsBackGracefullyOnEmptyBody() {
+    let error = CatalogAPIClient.decodeError(Data(), statusCode: 404)
+    XCTAssertEqual(error.statusCode, 404)
+    XCTAssertNil(error.error)
+  }
 }
