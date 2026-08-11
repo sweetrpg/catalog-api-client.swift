@@ -8,6 +8,12 @@ public struct CatalogAPIError: Error, Sendable {
   public let statusCode: Int
   public let error: String?
   public let message: String?
+
+  public init(statusCode: Int, error: String?, message: String?) {
+    self.statusCode = statusCode
+    self.error = error
+    self.message = message
+  }
 }
 
 /// Response to `PATCH /volumes/:id` when the caller's role applies the change directly
@@ -20,6 +26,12 @@ public struct ProposedChangeSubmission: Codable, Sendable {
   public let proposalId: String
   public let status: String
   public let message: String
+
+  public init(proposalId: String, status: String, message: String) {
+    self.proposalId = proposalId
+    self.status = status
+    self.message = message
+  }
 }
 
 /// A `PATCH /volumes/:id` response is one of these two shapes, distinguished by catalog-api's
@@ -37,6 +49,12 @@ public struct FieldChange: Codable, Sendable {
   public let old: String?
   public let new: String?
   public let status: String
+
+  public init(old: String?, new: String?, status: String) {
+    self.old = old
+    self.new = new
+    self.status = status
+  }
 }
 
 /// A submitter's proposed edit to a volume, pending admin/editor review. Mirrors catalog-api's
@@ -52,6 +70,23 @@ public struct ProposedChangeSummary: Codable, Sendable, Identifiable {
   public let reviewedBy: String?
   public let reviewedAt: Date?
   public let reviewNote: String?
+
+  public init(
+    id: String, recordType: String, recordId: String, diff: [String: FieldChange],
+    status: String, submittedBy: String, submittedAt: Date, reviewedBy: String?,
+    reviewedAt: Date?, reviewNote: String?
+  ) {
+    self.id = id
+    self.recordType = recordType
+    self.recordId = recordId
+    self.diff = diff
+    self.status = status
+    self.submittedBy = submittedBy
+    self.submittedAt = submittedAt
+    self.reviewedBy = reviewedBy
+    self.reviewedAt = reviewedAt
+    self.reviewNote = reviewNote
+  }
 }
 
 /// Response to an accept/reject review action.
@@ -61,6 +96,17 @@ public struct ReviewProposalResult: Codable, Sendable {
   public let applied: [String]?
   public let rejected: [String]?
   public let conflicts: [String]?
+
+  public init(
+    proposalId: String, status: String, applied: [String]?, rejected: [String]?,
+    conflicts: [String]?
+  ) {
+    self.proposalId = proposalId
+    self.status = status
+    self.applied = applied
+    self.rejected = rejected
+    self.conflicts = conflicts
+  }
 }
 
 struct PatchVolumeRequestBody: Encodable {
