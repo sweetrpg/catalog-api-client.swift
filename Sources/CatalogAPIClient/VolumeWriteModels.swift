@@ -116,6 +116,22 @@ public struct ReviewProposalResult: Codable, Sendable {
   }
 }
 
+/// Response to `GET`/`POST /vocabularies/:type` - a shared, growable list (contribution types,
+/// property names, formats). See durable-volume-editing's design.md.
+public struct VocabularyResponse: Codable, Sendable {
+  public let type: String
+  public let values: [String]
+
+  public init(type: String, values: [String]) {
+    self.type = type
+    self.values = values
+  }
+}
+
+struct AddVocabularyValueRequestBody: Encodable {
+  let value: String
+}
+
 struct PatchVolumeRequestBody: Encodable {
   let title: String?
   let description: String?

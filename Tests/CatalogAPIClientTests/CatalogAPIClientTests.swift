@@ -144,6 +144,22 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(doc.data.attributes.title, "Edited")
   }
 
+  func testVocabularyResponseDecodes() throws {
+    let json = """
+      {"type": "contribution-type", "values": ["Author", "Illustrator"]}
+      """
+    let vocabulary = try JSONDecoder().decode(VocabularyResponse.self, from: Data(json.utf8))
+    XCTAssertEqual(vocabulary.type, "contribution-type")
+    XCTAssertEqual(vocabulary.values, ["Author", "Illustrator"])
+  }
+
+  func testAddVocabularyValueRequestBodyEncodesValue() throws {
+    let body = AddVocabularyValueRequestBody(value: "Cartographer")
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertEqual(decoded?["value"] as? String, "Cartographer")
+  }
+
   func testProposedChangeSubmissionDecodes() throws {
     let json = """
       {"proposalId": "abc123", "status": "pending", "message": "Change proposed for review"}
