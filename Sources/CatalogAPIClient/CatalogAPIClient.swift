@@ -34,6 +34,53 @@ public struct CatalogAPIClient: Sendable {
     try await fetch(path: "/persons")
   }
 
+  public func fetchPerson(id: String) async throws -> JSONAPISingleDocument<PersonAttributes> {
+    try await fetch(path: "/persons/\(id)")
+  }
+
+  public func fetchPersonVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/persons/\(id)/volumes")
+  }
+
+  public func fetchPublishers() async throws -> JSONAPIDocument<PublisherAttributes> {
+    try await fetch(path: "/publishers")
+  }
+
+  public func fetchPublisher(id: String) async throws -> JSONAPISingleDocument<
+    PublisherAttributes
+  > {
+    try await fetch(path: "/publishers/\(id)")
+  }
+
+  public func fetchPublisherVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes>
+  {
+    try await fetch(path: "/publishers/\(id)/volumes")
+  }
+
+  public func fetchStudios() async throws -> JSONAPIDocument<StudioAttributes> {
+    try await fetch(path: "/studios")
+  }
+
+  public func fetchStudio(id: String) async throws -> JSONAPISingleDocument<StudioAttributes> {
+    try await fetch(path: "/studios/\(id)")
+  }
+
+  public func fetchStudioVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/studios/\(id)/volumes")
+  }
+
+  public func fetchLicenses() async throws -> JSONAPIDocument<LicenseAttributes> {
+    try await fetch(path: "/licenses")
+  }
+
+  public func fetchLicense(id: String) async throws -> JSONAPISingleDocument<LicenseAttributes> {
+    try await fetch(path: "/licenses/\(id)")
+  }
+
+  public func fetchLicenseVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/licenses/\(id)/volumes")
+  }
+
   public func fetchContributions() async throws -> JSONAPIDocument<ContributionAttributes> {
     try await fetch(path: "/contributions")
   }
@@ -81,6 +128,66 @@ public struct CatalogAPIClient: Sendable {
     default:
       throw Self.decodeError(data, statusCode: status)
     }
+  }
+
+  /// Edits a publisher/studio/person/license, or proposes an edit for review, depending on the
+  /// bearer token's roles - the generic counterpart of `patchVolume`, matching catalog-api's
+  /// `PATCH /:type/:id` contract of an arbitrary field-name-keyed JSON body. `path` is the
+  /// resource's collection path (e.g. `/publishers`).
+  public func patchEntity<Attributes: Codable & Sendable>(
+    path: String, id: String, token: String, fields: [String: String]
+  ) async throws -> EntityPatchResult<Attributes> {
+    let body = try JSONEncoder().encode(fields)
+    let (data, status) = try await send(
+      method: "PATCH", path: "\(path)/\(id)", token: token, body: body)
+    switch status {
+    case 200:
+      return .applied(try Self.decodeFirstLine(data))
+    case 202:
+      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+    default:
+      throw Self.decodeError(data, statusCode: status)
+    }
+  }
+
+  /// Lists a publisher/studio/person/license's pending proposed changes - the generic
+  /// counterpart of `listProposedChanges(volumeID:token:)`. `path` is the resource's collection
+  /// path (e.g. `/publishers`). Editor/admin only, enforced by catalog-api.
+  public func listProposedChanges(path: String, id: String, token: String) async throws
+    -> [ProposedChangeSummary]
+  {
+    let (data, status) = try await send(
+      method: "GET", path: "\(path)/\(id)/proposed-changes", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode([ProposedChangeSummary].self, from: data)
+  }
+
+  /// Accepts a publisher/studio/person/license proposed change - the generic counterpart of
+  /// `acceptProposedChange(volumeID:proposalID:token:fields:)`.
+  public func acceptProposedChange(
+    path: String, id: String, proposalID: String, token: String, fields: [String]? = nil
+  ) async throws -> ReviewProposalResult {
+    let body = try JSONEncoder().encode(AcceptProposalRequestBody(fields: fields))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/accept",
+      token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
+  }
+
+  /// Rejects a publisher/studio/person/license proposed change - the generic counterpart of
+  /// `rejectProposedChange(volumeID:proposalID:token:note:)`.
+  public func rejectProposedChange(
+    path: String, id: String, proposalID: String, token: String, note: String? = nil
+  ) async throws -> ReviewProposalResult {
+    let body = try JSONEncoder().encode(RejectProposalRequestBody(note: note))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/reject",
+      token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
   }
 
   /// Lists a volume's pending proposed changes - editor/admin only, enforced by catalog-api.
@@ -163,6 +270,15 @@ public struct CatalogAPIClient: Sendable {
   }
 
   private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPIDocument<T> {
+    try Self.decodeFirstLine(try await fetchRaw(path: path))
+  }
+
+  private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPISingleDocument<T>
+  {
+    try Self.decodeFirstLine(try await fetchRaw(path: path))
+  }
+
+  private func fetchRaw(path: String) async throws -> Data {
     guard let url = URL(string: baseURL + path) else {
       throw URLError(.badURL)
     }
@@ -182,7 +298,7 @@ public struct CatalogAPIClient: Sendable {
     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
       throw URLError(.badServerResponse)
     }
-    return try Self.decodeFirstLine(data)
+    return data
   }
 
   /// catalog-api has been observed appending a second, unrelated JSON object after a newline

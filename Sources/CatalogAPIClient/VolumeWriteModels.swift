@@ -41,6 +41,13 @@ public enum VolumePatchResult: Sendable {
   case proposed(ProposedChangeSubmission)
 }
 
+/// A `PATCH /:type/:id` response for any of publisher/studio/person/license - the generic
+/// counterpart of `VolumePatchResult`, parameterized by that type's attributes.
+public enum EntityPatchResult<Attributes: Codable & Sendable>: Sendable {
+  case applied(JSONAPISingleDocument<Attributes>)
+  case proposed(ProposedChangeSubmission)
+}
+
 /// One changed field's live-at-submission-time and proposed values, plus its own review
 /// outcome. `old`/`new` are decoded as `String` - catalog-api's proposed-change fields are all
 /// simple string attributes (title/description/notes) for now; if a non-string field is ever

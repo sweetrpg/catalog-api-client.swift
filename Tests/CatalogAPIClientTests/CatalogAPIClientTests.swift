@@ -65,6 +65,36 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(attrs.displayName, "Gary Gygax")
   }
 
+  func testPublisherAttributesDecodesFullShape() {
+    let attrs = try! JSONDecoder().decode(
+      PublisherAttributes.self,
+      from: Data(
+        #"{"name": "TSR", "address": "Lake Geneva, WI", "website": "https://example.com", "notes": null, "tags": null}"#
+          .utf8))
+    XCTAssertEqual(attrs.displayName, "TSR")
+    XCTAssertEqual(attrs.address, "Lake Geneva, WI")
+  }
+
+  func testStudioAttributesDisplayNameFallsBackToUntitled() {
+    let attrs = try! JSONDecoder().decode(
+      StudioAttributes.self, from: Data(#"{"name": null}"#.utf8))
+    XCTAssertEqual(attrs.displayName, "Untitled")
+  }
+
+  func testLicenseAttributesDecodesFullShape() {
+    let attrs = try! JSONDecoder().decode(
+      LicenseAttributes.self,
+      from: Data(
+        #"""
+        {"title": "CC BY 4.0", "shortTitle": "CC-BY-4.0", "version": "4.0", "deed": "https://example.com/deed",
+         "legalCode": "https://example.com/legal", "website": null, "status": "active",
+         "availability": "public", "notes": null, "tags": null}
+        """#
+          .utf8))
+    XCTAssertEqual(attrs.displayName, "CC BY 4.0")
+    XCTAssertEqual(attrs.status, "active")
+  }
+
   func testReviewAttributesDisplayFieldsFallBackAcrossAliases() {
     let attrs = try! JSONDecoder().decode(
       ReviewAttributes.self,

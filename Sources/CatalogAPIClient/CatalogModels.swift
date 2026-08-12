@@ -26,6 +26,8 @@ public struct PersonAttributes: Codable, Sendable {
   public let fullName: String?
   public let firstName: String?
   public let lastName: String?
+  public let notes: String?
+  public let tags: [TagAttributes]?
 
   public var displayName: String {
     if let name { return name }
@@ -33,6 +35,47 @@ public struct PersonAttributes: Codable, Sendable {
     let combined = [firstName, lastName].compactMap { $0 }.joined(separator: " ")
     return combined.isEmpty ? "Unknown" : combined
   }
+}
+
+/// A publisher's full set of attributes, matching `catalog-objects.go`'s publisher model -
+/// `NamedAttributes` only covers `name`/`title` and is kept around for the other simple named
+/// resources (systems) that don't need more.
+public struct PublisherAttributes: Codable, Sendable {
+  public let name: String?
+  public let address: String?
+  public let website: String?
+  public let notes: String?
+  public let tags: [TagAttributes]?
+
+  public var displayName: String { name ?? "Untitled" }
+}
+
+/// A studio's full set of attributes, matching `catalog-objects.go`'s studio model - the same
+/// shape as `PublisherAttributes` minus `address`.
+public struct StudioAttributes: Codable, Sendable {
+  public let name: String?
+  public let website: String?
+  public let notes: String?
+  public let tags: [TagAttributes]?
+
+  public var displayName: String { name ?? "Untitled" }
+}
+
+/// A license's full set of attributes, matching `catalog-objects.go`'s license model - the
+/// richest of the four entity types, with no equivalent thin shape.
+public struct LicenseAttributes: Codable, Sendable {
+  public let title: String?
+  public let shortTitle: String?
+  public let version: String?
+  public let deed: String?
+  public let legalCode: String?
+  public let website: String?
+  public let status: String?
+  public let availability: String?
+  public let notes: String?
+  public let tags: [TagAttributes]?
+
+  public var displayName: String { title ?? "Untitled" }
 }
 
 public struct ContributionAttributes: Codable, Sendable {
