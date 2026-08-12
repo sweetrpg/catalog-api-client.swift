@@ -130,6 +130,66 @@ public struct CatalogAPIClient: Sendable {
     }
   }
 
+  /// Edits a publisher/studio/person/license, or proposes an edit for review, depending on the
+  /// bearer token's roles - the generic counterpart of `patchVolume`, matching catalog-api's
+  /// `PATCH /:type/:id` contract of an arbitrary field-name-keyed JSON body. `path` is the
+  /// resource's collection path (e.g. `/publishers`).
+  public func patchEntity<Attributes: Codable & Sendable>(
+    path: String, id: String, token: String, fields: [String: String]
+  ) async throws -> EntityPatchResult<Attributes> {
+    let body = try JSONEncoder().encode(fields)
+    let (data, status) = try await send(
+      method: "PATCH", path: "\(path)/\(id)", token: token, body: body)
+    switch status {
+    case 200:
+      return .applied(try Self.decodeFirstLine(data))
+    case 202:
+      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+    default:
+      throw Self.decodeError(data, statusCode: status)
+    }
+  }
+
+  /// Lists a publisher/studio/person/license's pending proposed changes - the generic
+  /// counterpart of `listProposedChanges(volumeID:token:)`. `path` is the resource's collection
+  /// path (e.g. `/publishers`). Editor/admin only, enforced by catalog-api.
+  public func listProposedChanges(path: String, id: String, token: String) async throws
+    -> [ProposedChangeSummary]
+  {
+    let (data, status) = try await send(
+      method: "GET", path: "\(path)/\(id)/proposed-changes", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode([ProposedChangeSummary].self, from: data)
+  }
+
+  /// Accepts a publisher/studio/person/license proposed change - the generic counterpart of
+  /// `acceptProposedChange(volumeID:proposalID:token:fields:)`.
+  public func acceptProposedChange(
+    path: String, id: String, proposalID: String, token: String, fields: [String]? = nil
+  ) async throws -> ReviewProposalResult {
+    let body = try JSONEncoder().encode(AcceptProposalRequestBody(fields: fields))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/accept",
+      token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
+  }
+
+  /// Rejects a publisher/studio/person/license proposed change - the generic counterpart of
+  /// `rejectProposedChange(volumeID:proposalID:token:note:)`.
+  public func rejectProposedChange(
+    path: String, id: String, proposalID: String, token: String, note: String? = nil
+  ) async throws -> ReviewProposalResult {
+    let body = try JSONEncoder().encode(RejectProposalRequestBody(note: note))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/reject",
+      token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
+  }
+
   /// Lists a volume's pending proposed changes - editor/admin only, enforced by catalog-api.
   public func listProposedChanges(volumeID: String, token: String) async throws
     -> [ProposedChangeSummary]
