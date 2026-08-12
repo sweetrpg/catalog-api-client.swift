@@ -34,6 +34,53 @@ public struct CatalogAPIClient: Sendable {
     try await fetch(path: "/persons")
   }
 
+  public func fetchPerson(id: String) async throws -> JSONAPISingleDocument<PersonAttributes> {
+    try await fetch(path: "/persons/\(id)")
+  }
+
+  public func fetchPersonVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/persons/\(id)/volumes")
+  }
+
+  public func fetchPublishers() async throws -> JSONAPIDocument<PublisherAttributes> {
+    try await fetch(path: "/publishers")
+  }
+
+  public func fetchPublisher(id: String) async throws -> JSONAPISingleDocument<
+    PublisherAttributes
+  > {
+    try await fetch(path: "/publishers/\(id)")
+  }
+
+  public func fetchPublisherVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes>
+  {
+    try await fetch(path: "/publishers/\(id)/volumes")
+  }
+
+  public func fetchStudios() async throws -> JSONAPIDocument<StudioAttributes> {
+    try await fetch(path: "/studios")
+  }
+
+  public func fetchStudio(id: String) async throws -> JSONAPISingleDocument<StudioAttributes> {
+    try await fetch(path: "/studios/\(id)")
+  }
+
+  public func fetchStudioVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/studios/\(id)/volumes")
+  }
+
+  public func fetchLicenses() async throws -> JSONAPIDocument<LicenseAttributes> {
+    try await fetch(path: "/licenses")
+  }
+
+  public func fetchLicense(id: String) async throws -> JSONAPISingleDocument<LicenseAttributes> {
+    try await fetch(path: "/licenses/\(id)")
+  }
+
+  public func fetchLicenseVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
+    try await fetch(path: "/licenses/\(id)/volumes")
+  }
+
   public func fetchContributions() async throws -> JSONAPIDocument<ContributionAttributes> {
     try await fetch(path: "/contributions")
   }
@@ -163,6 +210,15 @@ public struct CatalogAPIClient: Sendable {
   }
 
   private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPIDocument<T> {
+    try Self.decodeFirstLine(try await fetchRaw(path: path))
+  }
+
+  private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPISingleDocument<T>
+  {
+    try Self.decodeFirstLine(try await fetchRaw(path: path))
+  }
+
+  private func fetchRaw(path: String) async throws -> Data {
     guard let url = URL(string: baseURL + path) else {
       throw URLError(.badURL)
     }
@@ -182,7 +238,7 @@ public struct CatalogAPIClient: Sendable {
     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
       throw URLError(.badServerResponse)
     }
-    return try Self.decodeFirstLine(data)
+    return data
   }
 
   /// catalog-api has been observed appending a second, unrelated JSON object after a newline
