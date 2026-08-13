@@ -28,6 +28,7 @@ public struct VolumeAttributes: Codable, Sendable {
   public let notes: String?
   public let tags: [TagAttributes]?
   public let properties: [PropertyAttributes]?
+  public let format: String?
 }
 
 public struct NamedAttributes: Codable, Sendable {
