@@ -227,6 +227,67 @@ public struct CatalogAPIClient: Sendable {
     return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
   }
 
+  /// Lists a volume's version history, newest first.
+  public func fetchVolumeVersions(id: String, token: String) async throws
+    -> [VolumeVersionAttributes]
+  {
+    let (data, status) = try await send(
+      method: "GET", path: "/volumes/\(id)/versions", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode([VolumeVersionAttributes].self, from: data)
+  }
+
+  /// Fetches one version's full field snapshot, regardless of whether it's current.
+  public func fetchVolumeVersion(id: String, version: Int, token: String) async throws
+    -> VolumeVersionAttributes
+  {
+    let (data, status) = try await send(
+      method: "GET", path: "/volumes/\(id)/versions/\(version)", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(VolumeVersionAttributes.self, from: data)
+  }
+
+  /// Accepts a submitted volume version in full (`fields: nil`) or in part (`fields` lists which
+  /// changed field names to accept). Editor/admin only, enforced by catalog-api.
+  public func acceptVolumeVersion(
+    id: String, version: Int, token: String, fields: [String]? = nil
+  ) async throws -> ReviewVersionResult {
+    let body = try JSONEncoder().encode(AcceptVersionRequestBody(fields: fields))
+    let (data, status) = try await send(
+      method: "POST", path: "/volumes/\(id)/versions/\(version)/accept", token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+  }
+
+  /// Rejects a submitted volume version in full, with an optional review note. Editor/admin
+  /// only, enforced by catalog-api.
+  public func rejectVolumeVersion(
+    id: String, version: Int, token: String, note: String? = nil
+  ) async throws -> ReviewVersionResult {
+    let body = try JSONEncoder().encode(RejectVersionRequestBody(note: note))
+    let (data, status) = try await send(
+      method: "POST", path: "/volumes/\(id)/versions/\(version)/reject", token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+  }
+
+  /// Rolls a volume back (or forward) to an arbitrary existing version. Admin only, enforced by
+  /// catalog-api.
+  public func setCurrentVolumeVersion(id: String, version: Int, token: String) async throws
+    -> VolumeVersionAttributes
+  {
+    let (data, status) = try await send(
+      method: "POST", path: "/volumes/\(id)/versions/\(version)/current", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(VolumeVersionAttributes.self, from: data)
+  }
+
   /// Lists a shared vocabulary's values (`contribution-type`, `property-name`, or `format`) -
   /// any edit-capable role, enforced by catalog-api. `format` is further restricted to
   /// editor/admin - a submitter's token gets a 403, same as any other role check here.
