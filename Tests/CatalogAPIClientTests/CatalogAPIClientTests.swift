@@ -41,6 +41,15 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(doc.data[0].attributes.format, "Hardcover")
   }
 
+  func testDecodesVolumeSampleAssetIdsAttribute() throws {
+    let json = """
+      {"data": [{"id": "vol-1", "type": "volumes", "attributes": {"title": null, "description": null, "notes": null, "tags": null, "sampleAssetIds": ["vol-1-0", "vol-1-1"]}, "relationships": null}]}
+      """
+    let doc: JSONAPIDocument<VolumeAttributes> = try CatalogAPIClient.decodeFirstLine(
+      Data(json.utf8))
+    XCTAssertEqual(doc.data[0].attributes.sampleAssetIds, ["vol-1-0", "vol-1-1"])
+  }
+
   func testDecodesToManyRelationship() throws {
     let json = """
       {"data": [{"id": "vol-1", "type": "volumes", "attributes": {"title": null, "description": null, "notes": null, "tags": null}, "relationships": {"publisher": {"data": [{"id": "pub-1", "type": "publishers"}, {"id": "pub-2", "type": "publishers"}]}}}]}
