@@ -230,6 +230,63 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(result.applied, [])
   }
 
+  func testVolumeVersionAttributesDecodesWithISO8601Dates() throws {
+    let json = """
+      {
+        "id": "ver-2",
+        "recordId": "vol-1",
+        "version": 2,
+        "title": "Submitted Title",
+        "description": "d",
+        "notes": "",
+        "format": "",
+        "coverAssetId": "",
+        "sampleAssetIds": [],
+        "state": "submitted",
+        "baseVersion": 1,
+        "submittedBy": "auth0|submitter",
+        "submittedAt": "2026-08-13T05:00:00Z",
+        "reviewedBy": null,
+        "reviewedAt": null,
+        "reviewNote": null,
+        "resultingVersion": null,
+        "systems": [],
+        "properties": []
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let version = try decoder.decode(VolumeVersionAttributes.self, from: Data(json.utf8))
+    XCTAssertEqual(version.version, 2)
+    XCTAssertEqual(version.state, "submitted")
+    XCTAssertEqual(version.baseVersion, 1)
+    XCTAssertNil(version.reviewedAt)
+  }
+
+  func testAcceptVersionRequestBodyOmittedFieldsMeansAcceptAll() throws {
+    let body = AcceptVersionRequestBody(fields: nil)
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertNil(decoded?["fields"])
+  }
+
+  func testAcceptVersionRequestBodyEncodesFieldSubset() throws {
+    let body = AcceptVersionRequestBody(fields: ["title"])
+    let data = try JSONEncoder().encode(body)
+    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertEqual(decoded?["fields"] as? [String], ["title"])
+  }
+
+  func testReviewVersionResultDecodesConflicts() throws {
+    let json = """
+      {"version": 3, "state": "live", "conflicts": ["title"]}
+      """
+    let result = try JSONDecoder().decode(ReviewVersionResult.self, from: Data(json.utf8))
+    XCTAssertEqual(result.version, 3)
+    XCTAssertEqual(result.state, "live")
+    XCTAssertEqual(result.conflicts, ["title"])
+  }
+
   func testDecodeErrorParsesCatalogAPIErrorBody() {
     let json = """
       {"error": "already_reviewed", "message": "This proposed change has already been reviewed"}
