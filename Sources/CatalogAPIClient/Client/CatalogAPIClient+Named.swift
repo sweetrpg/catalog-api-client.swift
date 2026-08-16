@@ -1,6 +1,8 @@
 import Foundation
+import Tracing
+
 #if canImport(FoundationNetworking)
-    import FoundationNetworking
+  import FoundationNetworking
 #endif
 
 extension CatalogAPIClient {
@@ -9,6 +11,8 @@ extension CatalogAPIClient {
   /// (`/systems`, `/publishers`, `/studios`, `/licenses`) - they all share the same
   /// `NamedAttributes` shape.
   public func fetchNamed(path: String) async throws -> JSONAPIDocument<NamedAttributes> {
-    try await fetch(path: path)
+    try await withSpan("fetchNamed") { _ in
+      try await fetch(path: path)
+    }
   }
 }

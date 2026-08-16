@@ -1,6 +1,8 @@
 import Foundation
+import Tracing
+
 #if canImport(FoundationNetworking)
-    import FoundationNetworking
+  import FoundationNetworking
 #endif
 
 extension CatalogAPIClient {
@@ -12,15 +14,17 @@ extension CatalogAPIClient {
   /// different record, or the caller is at their unapproved-submission cap - see
   /// durable-volume-editing in sweetrpg/platform.
   public func finalizeSession(id: String, token: String) async throws -> VolumePatchResult {
-    let (data, status) = try await send(
-      method: "POST", path: "/volumes/\(id)/finalize-session", token: token, body: nil)
-    switch status {
-    case 200:
-      return .applied(try Self.decodeFirstLine(data))
-    case 202:
-      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
-    default:
-      throw Self.decodeError(data, statusCode: status)
+    try await withSpan("finalizeSession") {
+      let (data, status) = try await send(
+        method: "POST", path: "/volumes/\(id)/finalize-session", token: token, body: nil)
+      switch status {
+      case 200:
+        return .applied(try Self.decodeFirstLine(data))
+      case 202:
+        return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+      default:
+        throw Self.decodeError(data, statusCode: status)
+      }
     }
   }
 }
