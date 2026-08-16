@@ -8,7 +8,7 @@ import Tracing
 extension CatalogAPIClient {
 
   public func fetchVolumes() async throws -> JSONAPIDocument<VolumeAttributes> {
-    try await withSpan("fetchVolumes") { _ in
+    try await withSpan("fetch-volumes") { _ in
       try await fetch(path: "/volumes")
     }
   }
@@ -21,7 +21,7 @@ extension CatalogAPIClient {
     id: String, token: String, title: String? = nil, description: String? = nil,
     notes: String? = nil
   ) async throws -> VolumePatchResult {
-    try await withSpan("patchVolume") { _ in
+    try await withSpan("patch-volume") { _ in
       let body = try JSONEncoder().encode(
         PatchVolumeRequestBody(title: title, description: description, notes: notes))
       let (data, status) = try await send(

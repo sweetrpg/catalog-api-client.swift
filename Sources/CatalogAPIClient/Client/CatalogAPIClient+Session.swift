@@ -14,7 +14,7 @@ extension CatalogAPIClient {
   /// different record, or the caller is at their unapproved-submission cap - see
   /// durable-volume-editing in sweetrpg/platform.
   public func finalizeSession(id: String, token: String) async throws -> VolumePatchResult {
-    try await withSpan("finalizeSession") { _ in
+    try await withSpan("finalize-session") { _ in
       let (data, status) = try await send(
         method: "POST", path: "/volumes/\(id)/finalize-session", token: token, body: nil)
       switch status {

@@ -78,7 +78,7 @@ public struct CatalogAPIClient: Sendable {
   }
 
   private func fetchRaw(path: String) async throws -> Data {
-    try await withSpan("fetchRaw") { _ in
+    try await withSpan("fetch-raw") { _ in
       guard let url = URL(string: baseURL + path) else {
         throw URLError(.badURL)
       }
