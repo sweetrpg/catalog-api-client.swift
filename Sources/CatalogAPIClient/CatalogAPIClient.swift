@@ -105,7 +105,7 @@ public struct CatalogAPIClient: Sendable {
     case 200:
       return .applied(try Self.decodeFirstLine(data))
     case 202:
-      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+      return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
     default:
       throw Self.decodeError(data, statusCode: status)
     }
@@ -124,7 +124,7 @@ public struct CatalogAPIClient: Sendable {
     case 200:
       return .applied(try Self.decodeFirstLine(data))
     case 202:
-      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+      return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
     default:
       throw Self.decodeError(data, statusCode: status)
     }
@@ -144,87 +144,10 @@ public struct CatalogAPIClient: Sendable {
     case 200:
       return .applied(try Self.decodeFirstLine(data))
     case 202:
-      return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+      return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
     default:
       throw Self.decodeError(data, statusCode: status)
     }
-  }
-
-  /// Lists a publisher/studio/person/license's pending proposed changes - the generic
-  /// counterpart of `listProposedChanges(volumeID:token:)`. `path` is the resource's collection
-  /// path (e.g. `/publishers`). Editor/admin only, enforced by catalog-api.
-  public func listProposedChanges(path: String, id: String, token: String) async throws
-    -> [ProposedChangeSummary]
-  {
-    let (data, status) = try await send(
-      method: "GET", path: "\(path)/\(id)/proposed-changes", token: token, body: nil)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
-    return try decoder.decode([ProposedChangeSummary].self, from: data)
-  }
-
-  /// Accepts a publisher/studio/person/license proposed change - the generic counterpart of
-  /// `acceptProposedChange(volumeID:proposalID:token:fields:)`.
-  public func acceptProposedChange(
-    path: String, id: String, proposalID: String, token: String, fields: [String]? = nil
-  ) async throws -> ReviewProposalResult {
-    let body = try JSONEncoder().encode(AcceptProposalRequestBody(fields: fields))
-    let (data, status) = try await send(
-      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/accept",
-      token: token, body: body)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
-  }
-
-  /// Rejects a publisher/studio/person/license proposed change - the generic counterpart of
-  /// `rejectProposedChange(volumeID:proposalID:token:note:)`.
-  public func rejectProposedChange(
-    path: String, id: String, proposalID: String, token: String, note: String? = nil
-  ) async throws -> ReviewProposalResult {
-    let body = try JSONEncoder().encode(RejectProposalRequestBody(note: note))
-    let (data, status) = try await send(
-      method: "POST", path: "\(path)/\(id)/proposed-changes/\(proposalID)/reject",
-      token: token, body: body)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
-  }
-
-  /// Lists a volume's pending proposed changes - editor/admin only, enforced by catalog-api.
-  public func listProposedChanges(volumeID: String, token: String) async throws
-    -> [ProposedChangeSummary]
-  {
-    let (data, status) = try await send(
-      method: "GET", path: "/volumes/\(volumeID)/proposed-changes", token: token, body: nil)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
-    return try decoder.decode([ProposedChangeSummary].self, from: data)
-  }
-
-  /// Accepts a proposed change in full (`fields: nil`) or in part (`fields` lists which
-  /// changed field names to accept; the rest are rejected). Editor/admin only.
-  public func acceptProposedChange(
-    volumeID: String, proposalID: String, token: String, fields: [String]? = nil
-  ) async throws -> ReviewProposalResult {
-    let body = try JSONEncoder().encode(AcceptProposalRequestBody(fields: fields))
-    let (data, status) = try await send(
-      method: "POST", path: "/volumes/\(volumeID)/proposed-changes/\(proposalID)/accept",
-      token: token, body: body)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
-  }
-
-  /// Rejects a proposed change in full, with an optional review note. Editor/admin only.
-  public func rejectProposedChange(
-    volumeID: String, proposalID: String, token: String, note: String? = nil
-  ) async throws -> ReviewProposalResult {
-    let body = try JSONEncoder().encode(RejectProposalRequestBody(note: note))
-    let (data, status) = try await send(
-      method: "POST", path: "/volumes/\(volumeID)/proposed-changes/\(proposalID)/reject",
-      token: token, body: body)
-    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
-    return try JSONDecoder().decode(ReviewProposalResult.self, from: data)
   }
 
   /// Lists a volume's version history, newest first.
@@ -286,6 +209,73 @@ public struct CatalogAPIClient: Sendable {
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
     return try decoder.decode(VolumeVersionAttributes.self, from: data)
+  }
+
+  /// Lists a publisher/studio/person/license's version history, newest first - the generic
+  /// counterpart of `fetchVolumeVersions(id:token:)`. `path` is the resource's collection path
+  /// (e.g. `/publishers`).
+  public func fetchEntityVersions<T: EntityVersionAttributes>(
+    path: String, id: String, token: String
+  ) async throws -> [T] {
+    let (data, status) = try await send(
+      method: "GET", path: "\(path)/\(id)/versions", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode([T].self, from: data)
+  }
+
+  /// Fetches one publisher/studio/person/license version's full field snapshot - the generic
+  /// counterpart of `fetchVolumeVersion(id:version:token:)`.
+  public func fetchEntityVersion<T: EntityVersionAttributes>(
+    path: String, id: String, version: Int, token: String
+  ) async throws -> T {
+    let (data, status) = try await send(
+      method: "GET", path: "\(path)/\(id)/versions/\(version)", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(T.self, from: data)
+  }
+
+  /// Accepts a publisher/studio/person/license submitted version, in full or in part - the
+  /// generic counterpart of `acceptVolumeVersion(id:version:token:fields:)`. Editor/admin only,
+  /// enforced by catalog-api.
+  public func acceptEntityVersion(
+    path: String, id: String, version: Int, token: String, fields: [String]? = nil
+  ) async throws -> ReviewVersionResult {
+    let body = try JSONEncoder().encode(AcceptVersionRequestBody(fields: fields))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/versions/\(version)/accept", token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+  }
+
+  /// Rejects a publisher/studio/person/license submitted version in full, with an optional
+  /// review note - the generic counterpart of `rejectVolumeVersion(id:version:token:note:)`.
+  /// Editor/admin only, enforced by catalog-api.
+  public func rejectEntityVersion(
+    path: String, id: String, version: Int, token: String, note: String? = nil
+  ) async throws -> ReviewVersionResult {
+    let body = try JSONEncoder().encode(RejectVersionRequestBody(note: note))
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/versions/\(version)/reject", token: token, body: body)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+  }
+
+  /// Rolls a publisher/studio/person/license back (or forward) to an arbitrary existing version -
+  /// the generic counterpart of `setCurrentVolumeVersion(id:version:token:)`. Admin only,
+  /// enforced by catalog-api.
+  public func setCurrentEntityVersion<T: EntityVersionAttributes>(
+    path: String, id: String, version: Int, token: String
+  ) async throws -> T {
+    let (data, status) = try await send(
+      method: "POST", path: "\(path)/\(id)/versions/\(version)/current", token: token, body: nil)
+    guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(T.self, from: data)
   }
 
   /// Lists a shared vocabulary's values (`contribution-type`, `property-name`, or `format`) -
