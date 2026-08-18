@@ -1,3 +1,12 @@
+## [0.2.1] - 2026-08-18
+
+### 🐛 Bug Fixes
+
+- *(license)* Add CodingKeys for short_title/legal_code
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.2.0
 ## [0.2.0] - 2026-08-18
 
 ### 🚀 Features
