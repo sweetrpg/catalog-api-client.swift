@@ -118,7 +118,7 @@ final class CatalogAPIClientTests: XCTestCase {
          "legalCode": "https://example.com/legal", "website": null, "status": "active",
          "availability": "public", "notes": null, "tags": null}
         """#
-          .utf8))
+        .utf8))
     XCTAssertEqual(attrs.displayName, "CC BY 4.0")
     XCTAssertEqual(attrs.status, "active")
   }
@@ -148,7 +148,6 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertNil(decoded?["description"])
     XCTAssertNil(decoded?["notes"])
   }
-
 
   func testVolumePatchResultDecodesAppliedResponse() throws {
     let json = """

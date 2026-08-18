@@ -1,6 +1,7 @@
 import Foundation
+
 #if canImport(FoundationNetworking)
-    import FoundationNetworking
+  import FoundationNetworking
 #endif
 
 /// Swift client SDK for `catalog-api`: JSON:API fetch and decoding only, for volumes, credits,
@@ -52,8 +53,7 @@ public struct CatalogAPIClient: Sendable {
     try await fetch(path: "/publishers/\(id)")
   }
 
-  public func fetchPublisherVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes>
-  {
+  public func fetchPublisherVolumes(id: String) async throws -> JSONAPIDocument<VolumeAttributes> {
     try await fetch(path: "/publishers/\(id)/volumes")
   }
 
@@ -346,8 +346,7 @@ public struct CatalogAPIClient: Sendable {
     try Self.decodeFirstLine(try await fetchRaw(path: path))
   }
 
-  private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPISingleDocument<T>
-  {
+  private func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPISingleDocument<T> {
     try Self.decodeFirstLine(try await fetchRaw(path: path))
   }
 
