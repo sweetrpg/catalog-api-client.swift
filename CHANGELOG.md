@@ -1,3 +1,16 @@
+## [0.2.0] - 2026-08-18
+
+### 🚀 Features
+
+- *(license)* Expose properties attribute on LicenseAttributes
+
+### 🐛 Bug Fixes
+
+- *(tracing)* Actually inject trace context into outgoing requests
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.1.0
 ## [0.1.0] - 2026-08-18
 
 ### 🚀 Features
