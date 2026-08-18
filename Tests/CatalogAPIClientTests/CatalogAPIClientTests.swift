@@ -110,17 +110,22 @@ final class CatalogAPIClientTests: XCTestCase {
   }
 
   func testLicenseAttributesDecodesFullShape() {
+    // catalog-api emits snake_case for short_title/legal_code (confirmed live against dev) -
+    // this fixture previously used camelCase, matching a decode bug instead of catching it: the
+    // two fields silently decoded to nil on every real request without this test noticing.
     let attrs = try! JSONDecoder().decode(
       LicenseAttributes.self,
       from: Data(
         #"""
-        {"title": "CC BY 4.0", "shortTitle": "CC-BY-4.0", "version": "4.0", "deed": "https://example.com/deed",
-         "legalCode": "https://example.com/legal", "website": null, "status": "active",
-         "availability": "public", "notes": null, "tags": null}
+        {"title": "CC BY 4.0", "short_title": "CC-BY-4.0", "version": "4.0", "deed": "https://example.com/deed",
+         "legal_code": "https://example.com/legal", "website": null, "status": "active",
+         "availability": "public", "notes": null, "properties": null, "tags": null}
         """#
         .utf8))
     XCTAssertEqual(attrs.displayName, "CC BY 4.0")
     XCTAssertEqual(attrs.status, "active")
+    XCTAssertEqual(attrs.shortTitle, "CC-BY-4.0")
+    XCTAssertEqual(attrs.legalCode, "https://example.com/legal")
   }
 
   func testReviewAttributesDisplayFieldsFallBackAcrossAliases() {
