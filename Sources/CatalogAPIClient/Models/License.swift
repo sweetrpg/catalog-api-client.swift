@@ -12,6 +12,7 @@ public struct LicenseAttributes: Codable, Sendable {
   public let status: String?
   public let availability: String?
   public let notes: String?
+  public let properties: [PropertyAttributes]?
   public let tags: [TagAttributes]?
 
   public var displayName: String { title ?? "Untitled" }
