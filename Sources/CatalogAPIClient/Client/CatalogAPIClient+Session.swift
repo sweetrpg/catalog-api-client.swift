@@ -21,7 +21,7 @@ extension CatalogAPIClient {
       case 200:
         return .applied(try Self.decodeFirstLine(data))
       case 202:
-        return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+        return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
       default:
         throw Self.decodeError(data, statusCode: status)
       }

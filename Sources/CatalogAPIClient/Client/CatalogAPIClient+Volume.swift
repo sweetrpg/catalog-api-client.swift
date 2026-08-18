@@ -30,10 +30,84 @@ extension CatalogAPIClient {
       case 200:
         return .applied(try Self.decodeFirstLine(data))
       case 202:
-        return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+        return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
       default:
         throw Self.decodeError(data, statusCode: status)
       }
+    }
+  }
+
+  /// Lists a volume's version history, newest first.
+  public func fetchVolumeVersions(id: String, token: String) async throws
+    -> [VolumeVersionAttributes]
+  {
+    try await withSpan("fetch-volume-versions") { _ in
+      let (data, status) = try await send(
+        method: "GET", path: "/volumes/\(id)/versions", token: token, body: nil)
+      guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      return try decoder.decode([VolumeVersionAttributes].self, from: data)
+    }
+  }
+
+  /// Fetches one version's full field snapshot, regardless of whether it's current.
+  public func fetchVolumeVersion(id: String, version: Int, token: String) async throws
+    -> VolumeVersionAttributes
+  {
+    try await withSpan("fetch-volume-version") { _ in
+      let (data, status) = try await send(
+        method: "GET", path: "/volumes/\(id)/versions/\(version)", token: token, body: nil)
+      guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      return try decoder.decode(VolumeVersionAttributes.self, from: data)
+    }
+  }
+
+  /// Accepts a submitted volume version in full (`fields: nil`) or in part (`fields` lists which
+  /// changed field names to accept). Editor/admin only, enforced by catalog-api.
+  public func acceptVolumeVersion(
+    id: String, version: Int, token: String, fields: [String]? = nil
+  ) async throws -> ReviewVersionResult {
+    try await withSpan("accept-volume-version") { _ in
+      let body = try JSONEncoder().encode(AcceptVersionRequestBody(fields: fields))
+      let (data, status) = try await send(
+        method: "POST", path: "/volumes/\(id)/versions/\(version)/accept", token: token,
+        body: body)
+      guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+      return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+    }
+  }
+
+  /// Rejects a submitted volume version in full, with an optional review note. Editor/admin
+  /// only, enforced by catalog-api.
+  public func rejectVolumeVersion(
+    id: String, version: Int, token: String, note: String? = nil
+  ) async throws -> ReviewVersionResult {
+    try await withSpan("reject-volume-version") { _ in
+      let body = try JSONEncoder().encode(RejectVersionRequestBody(note: note))
+      let (data, status) = try await send(
+        method: "POST", path: "/volumes/\(id)/versions/\(version)/reject", token: token,
+        body: body)
+      guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+      return try JSONDecoder().decode(ReviewVersionResult.self, from: data)
+    }
+  }
+
+  /// Rolls a volume back (or forward) to an arbitrary existing version. Admin only, enforced by
+  /// catalog-api.
+  public func setCurrentVolumeVersion(id: String, version: Int, token: String) async throws
+    -> VolumeVersionAttributes
+  {
+    try await withSpan("set-current-volume-version") { _ in
+      let (data, status) = try await send(
+        method: "POST", path: "/volumes/\(id)/versions/\(version)/current", token: token,
+        body: nil)
+      guard status == 200 else { throw Self.decodeError(data, statusCode: status) }
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      return try decoder.decode(VolumeVersionAttributes.self, from: data)
     }
   }
 }
