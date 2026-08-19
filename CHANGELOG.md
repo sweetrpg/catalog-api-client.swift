@@ -1,3 +1,12 @@
+## [0.3.1] - 2026-08-19
+
+### 🐛 Bug Fixes
+
+- *(volume-version)* Tolerate a null sample_asset_ids in version records
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.3.0
 ## [0.3.0] - 2026-08-19
 
 ### 🚀 Features
