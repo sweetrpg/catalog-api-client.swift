@@ -172,6 +172,28 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(vocabulary.values, ["Author", "Illustrator"])
   }
 
+  func testCatalogStatsDecodes() throws {
+    let json = """
+      {"volume_count": 42, "last_updated": "2026-08-19T01:22:39Z"}
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
+    XCTAssertEqual(stats.volumeCount, 42)
+    XCTAssertNotNil(stats.lastUpdated)
+  }
+
+  func testCatalogStatsDecodesNilLastUpdated() throws {
+    let json = """
+      {"volume_count": 0, "last_updated": null}
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
+    XCTAssertEqual(stats.volumeCount, 0)
+    XCTAssertNil(stats.lastUpdated)
+  }
+
   func testAddVocabularyValueRequestBodyEncodesValue() throws {
     let body = AddVocabularyValueRequestBody(value: "Cartographer")
     let data = try JSONEncoder().encode(body)
