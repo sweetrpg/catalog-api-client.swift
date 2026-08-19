@@ -174,24 +174,42 @@ final class CatalogAPIClientTests: XCTestCase {
 
   func testCatalogStatsDecodes() throws {
     let json = """
-      {"volume_count": 42, "last_updated": "2026-08-19T01:22:39Z"}
+      {
+        "volumes": {"count": 42, "last_updated": "2026-08-19T01:22:39Z",
+          "most_recent": {"id": "vol-1", "name": "A Glorious Death"}},
+        "publishers": {"count": 3, "last_updated": null, "most_recent": null},
+        "studios": {"count": 3, "last_updated": null, "most_recent": null},
+        "persons": {"count": 3, "last_updated": null, "most_recent": null},
+        "licenses": {"count": 3, "last_updated": null, "most_recent": null},
+        "systems": {"count": 3, "last_updated": null, "most_recent": null}
+      }
       """
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
     let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
-    XCTAssertEqual(stats.volumeCount, 42)
-    XCTAssertNotNil(stats.lastUpdated)
+    XCTAssertEqual(stats.volumes.count, 42)
+    XCTAssertNotNil(stats.volumes.lastUpdated)
+    XCTAssertEqual(stats.volumes.mostRecent?.id, "vol-1")
+    XCTAssertEqual(stats.volumes.mostRecent?.name, "A Glorious Death")
   }
 
-  func testCatalogStatsDecodesNilLastUpdated() throws {
+  func testCatalogStatsDecodesEmptyType() throws {
     let json = """
-      {"volume_count": 0, "last_updated": null}
+      {
+        "volumes": {"count": 0, "last_updated": null, "most_recent": null},
+        "publishers": {"count": 0, "last_updated": null, "most_recent": null},
+        "studios": {"count": 0, "last_updated": null, "most_recent": null},
+        "persons": {"count": 0, "last_updated": null, "most_recent": null},
+        "licenses": {"count": 0, "last_updated": null, "most_recent": null},
+        "systems": {"count": 0, "last_updated": null, "most_recent": null}
+      }
       """
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
     let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
-    XCTAssertEqual(stats.volumeCount, 0)
-    XCTAssertNil(stats.lastUpdated)
+    XCTAssertEqual(stats.licenses.count, 0)
+    XCTAssertNil(stats.licenses.lastUpdated)
+    XCTAssertNil(stats.licenses.mostRecent)
   }
 
   func testAddVocabularyValueRequestBodyEncodesValue() throws {
