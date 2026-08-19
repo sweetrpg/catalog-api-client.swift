@@ -1,3 +1,12 @@
+## [0.3.0] - 2026-08-19
+
+### 🚀 Features
+
+- *(stats)* Add fetchCatalogStats() for GET /stats
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.2.1
 ## [0.2.1] - 2026-08-18
 
 ### 🐛 Bug Fixes
