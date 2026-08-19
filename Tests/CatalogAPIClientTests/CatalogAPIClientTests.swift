@@ -243,6 +243,34 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertNil(version.reviewedAt)
   }
 
+  func testVolumeVersionAttributesToleratesNullSampleAssetIds() throws {
+    let json = """
+      {
+        "id": "ver-2",
+        "recordId": "vol-1",
+        "version": 2,
+        "title": "Submitted Title",
+        "description": "d",
+        "notes": "",
+        "format": "",
+        "coverAssetId": "",
+        "sampleAssetIds": null,
+        "state": "submitted",
+        "baseVersion": 1,
+        "submittedBy": "auth0|submitter",
+        "submittedAt": "2026-08-13T05:00:00Z",
+        "reviewedBy": null,
+        "reviewedAt": null,
+        "reviewNote": null,
+        "resultingVersion": null
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let version = try decoder.decode(VolumeVersionAttributes.self, from: Data(json.utf8))
+    XCTAssertEqual(version.sampleAssetIds, [])
+  }
+
   func testAcceptVersionRequestBodyOmittedFieldsMeansAcceptAll() throws {
     let body = AcceptVersionRequestBody(fields: nil)
     let data = try JSONEncoder().encode(body)

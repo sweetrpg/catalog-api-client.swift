@@ -51,4 +51,36 @@ public struct VolumeVersionAttributes: Codable, Sendable, Identifiable {
     self.reviewNote = reviewNote
     self.resultingVersion = resultingVersion
   }
+
+  enum CodingKeys: String, CodingKey {
+    case id, recordId, version, title, description, notes, format, coverAssetId, sampleAssetIds,
+      state, baseVersion, submittedBy, submittedAt, reviewedBy, reviewedAt, reviewNote,
+      resultingVersion
+  }
+
+  // catalog-api has been observed emitting `sample_asset_ids: null` on some version records
+  // (rather than an omitted key or `[]`) - the synthesized decoder for a non-optional `[String]`
+  // rejects that outright with a valueNotFound error, breaking version-history/pending-review
+  // fetches for the affected volume entirely. `decodeIfPresent` returns nil for an explicit JSON
+  // null the same way it does for a missing key, so this tolerates both.
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    recordId = try container.decode(String.self, forKey: .recordId)
+    version = try container.decode(Int.self, forKey: .version)
+    title = try container.decode(String.self, forKey: .title)
+    description = try container.decode(String.self, forKey: .description)
+    notes = try container.decode(String.self, forKey: .notes)
+    format = try container.decode(String.self, forKey: .format)
+    coverAssetId = try container.decode(String.self, forKey: .coverAssetId)
+    sampleAssetIds = try container.decodeIfPresent([String].self, forKey: .sampleAssetIds) ?? []
+    state = try container.decode(String.self, forKey: .state)
+    baseVersion = try container.decodeIfPresent(Int.self, forKey: .baseVersion)
+    submittedBy = try container.decode(String.self, forKey: .submittedBy)
+    submittedAt = try container.decode(Date.self, forKey: .submittedAt)
+    reviewedBy = try container.decodeIfPresent(String.self, forKey: .reviewedBy)
+    reviewedAt = try container.decodeIfPresent(Date.self, forKey: .reviewedAt)
+    reviewNote = try container.decodeIfPresent(String.self, forKey: .reviewNote)
+    resultingVersion = try container.decodeIfPresent(Int.self, forKey: .resultingVersion)
+  }
 }
