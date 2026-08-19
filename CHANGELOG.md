@@ -1,8 +1,8 @@
-## [1.0.0] - 2026-08-19
+## [0.4.0] - 2026-08-19
 
 ### 🚀 Features
 
-- *(stats)* [**breaking**] Replace volume-only CatalogStats with per-type shape
+- *(stats)* Replace volume-only CatalogStats with per-type shape
 
 ### ⚙️ Miscellaneous Tasks
 
