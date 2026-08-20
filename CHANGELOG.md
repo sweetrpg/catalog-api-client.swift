@@ -1,3 +1,12 @@
+## [0.4.0] - 2026-08-19
+
+### 🚀 Features
+
+- *(stats)* Replace volume-only CatalogStats with per-type shape
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.3.1
 ## [0.3.1] - 2026-08-19
 
 ### 🐛 Bug Fixes
