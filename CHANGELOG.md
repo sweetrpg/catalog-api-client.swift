@@ -1,4 +1,10 @@
-## [0.0.13] - 2026-08-20
+## [0.4.1] - 2026-08-20
+
+Corrects a mis-versioned release: two independent sessions each fixed the same
+Contribution.roles bug, and one merged from a stale pre-0.4.0 branch, causing the
+release automation to compute 0.0.13 - a downgrade that broke catalog-web's
+`from: "0.4.0"` SwiftPM pin. No code change from what 0.0.13 published; version
+number only.
 
 ### 🐛 Bug Fixes
 
