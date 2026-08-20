@@ -110,17 +110,22 @@ final class CatalogAPIClientTests: XCTestCase {
   }
 
   func testLicenseAttributesDecodesFullShape() {
+    // catalog-api emits snake_case for short_title/legal_code (confirmed live against dev) -
+    // this fixture previously used camelCase, matching a decode bug instead of catching it: the
+    // two fields silently decoded to nil on every real request without this test noticing.
     let attrs = try! JSONDecoder().decode(
       LicenseAttributes.self,
       from: Data(
         #"""
-        {"title": "CC BY 4.0", "shortTitle": "CC-BY-4.0", "version": "4.0", "deed": "https://example.com/deed",
-         "legalCode": "https://example.com/legal", "website": null, "status": "active",
-         "availability": "public", "notes": null, "tags": null}
+        {"title": "CC BY 4.0", "short_title": "CC-BY-4.0", "version": "4.0", "deed": "https://example.com/deed",
+         "legal_code": "https://example.com/legal", "website": null, "status": "active",
+         "availability": "public", "notes": null, "properties": null, "tags": null}
         """#
         .utf8))
     XCTAssertEqual(attrs.displayName, "CC BY 4.0")
     XCTAssertEqual(attrs.status, "active")
+    XCTAssertEqual(attrs.shortTitle, "CC-BY-4.0")
+    XCTAssertEqual(attrs.legalCode, "https://example.com/legal")
   }
 
   func testReviewAttributesDisplayFieldsFallBackAcrossAliases() {
@@ -149,20 +154,6 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertNil(decoded?["notes"])
   }
 
-  func testAcceptProposalRequestBodyOmittedFieldsMeansAcceptAll() throws {
-    let body = AcceptProposalRequestBody(fields: nil)
-    let data = try JSONEncoder().encode(body)
-    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-    XCTAssertNil(decoded?["fields"])
-  }
-
-  func testAcceptProposalRequestBodyEncodesFieldSubset() throws {
-    let body = AcceptProposalRequestBody(fields: ["title"])
-    let data = try JSONEncoder().encode(body)
-    let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-    XCTAssertEqual(decoded?["fields"] as? [String], ["title"])
-  }
-
   func testVolumePatchResultDecodesAppliedResponse() throws {
     let json = """
       {"data": {"id": "vol-1", "type": "volumes", "attributes": {"title": "Edited", "description": "d", "notes": null, "tags": null}, "relationships": null}}
@@ -181,6 +172,46 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(vocabulary.values, ["Author", "Illustrator"])
   }
 
+  func testCatalogStatsDecodes() throws {
+    let json = """
+      {
+        "volumes": {"count": 42, "last_updated": "2026-08-19T01:22:39Z",
+          "most_recent": {"id": "vol-1", "name": "A Glorious Death"}},
+        "publishers": {"count": 3, "last_updated": null, "most_recent": null},
+        "studios": {"count": 3, "last_updated": null, "most_recent": null},
+        "persons": {"count": 3, "last_updated": null, "most_recent": null},
+        "licenses": {"count": 3, "last_updated": null, "most_recent": null},
+        "systems": {"count": 3, "last_updated": null, "most_recent": null}
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
+    XCTAssertEqual(stats.volumes.count, 42)
+    XCTAssertNotNil(stats.volumes.lastUpdated)
+    XCTAssertEqual(stats.volumes.mostRecent?.id, "vol-1")
+    XCTAssertEqual(stats.volumes.mostRecent?.name, "A Glorious Death")
+  }
+
+  func testCatalogStatsDecodesEmptyType() throws {
+    let json = """
+      {
+        "volumes": {"count": 0, "last_updated": null, "most_recent": null},
+        "publishers": {"count": 0, "last_updated": null, "most_recent": null},
+        "studios": {"count": 0, "last_updated": null, "most_recent": null},
+        "persons": {"count": 0, "last_updated": null, "most_recent": null},
+        "licenses": {"count": 0, "last_updated": null, "most_recent": null},
+        "systems": {"count": 0, "last_updated": null, "most_recent": null}
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let stats = try decoder.decode(CatalogStats.self, from: Data(json.utf8))
+    XCTAssertEqual(stats.licenses.count, 0)
+    XCTAssertNil(stats.licenses.lastUpdated)
+    XCTAssertNil(stats.licenses.mostRecent)
+  }
+
   func testAddVocabularyValueRequestBodyEncodesValue() throws {
     let body = AddVocabularyValueRequestBody(value: "Cartographer")
     let data = try JSONEncoder().encode(body)
@@ -188,46 +219,13 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(decoded?["value"] as? String, "Cartographer")
   }
 
-  func testProposedChangeSubmissionDecodes() throws {
+  func testSubmittedVersionResponseDecodes() throws {
     let json = """
-      {"proposalId": "abc123", "status": "pending", "message": "Change proposed for review"}
+      {"version": 2, "state": "submitted", "message": "Change submitted for review"}
       """
-    let submission = try JSONDecoder().decode(ProposedChangeSubmission.self, from: Data(json.utf8))
-    XCTAssertEqual(submission.proposalId, "abc123")
-    XCTAssertEqual(submission.status, "pending")
-  }
-
-  func testProposedChangeSummaryDecodesWithISO8601Dates() throws {
-    let json = """
-      {
-        "id": "prop-1",
-        "recordType": "volume",
-        "recordId": "vol-1",
-        "diff": {"title": {"old": "Old", "new": "New", "status": "pending"}},
-        "status": "pending",
-        "submittedBy": "auth0|submitter",
-        "submittedAt": "2026-08-11T05:00:00Z",
-        "reviewedBy": null,
-        "reviewedAt": null,
-        "reviewNote": null
-      }
-      """
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
-    let summary = try decoder.decode(ProposedChangeSummary.self, from: Data(json.utf8))
-    XCTAssertEqual(summary.id, "prop-1")
-    XCTAssertEqual(summary.diff["title"]?.old, "Old")
-    XCTAssertEqual(summary.diff["title"]?.new, "New")
-    XCTAssertNil(summary.reviewedAt)
-  }
-
-  func testReviewProposalResultDecodesConflicts() throws {
-    let json = """
-      {"proposalId": "prop-1", "status": "pending", "applied": [], "rejected": [], "conflicts": ["title"]}
-      """
-    let result = try JSONDecoder().decode(ReviewProposalResult.self, from: Data(json.utf8))
-    XCTAssertEqual(result.conflicts, ["title"])
-    XCTAssertEqual(result.applied, [])
+    let submission = try JSONDecoder().decode(SubmittedVersionResponse.self, from: Data(json.utf8))
+    XCTAssertEqual(submission.version, 2)
+    XCTAssertEqual(submission.state, "submitted")
   }
 
   func testVolumeVersionAttributesDecodesWithISO8601Dates() throws {
@@ -261,6 +259,34 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(version.state, "submitted")
     XCTAssertEqual(version.baseVersion, 1)
     XCTAssertNil(version.reviewedAt)
+  }
+
+  func testVolumeVersionAttributesToleratesNullSampleAssetIds() throws {
+    let json = """
+      {
+        "id": "ver-2",
+        "recordId": "vol-1",
+        "version": 2,
+        "title": "Submitted Title",
+        "description": "d",
+        "notes": "",
+        "format": "",
+        "coverAssetId": "",
+        "sampleAssetIds": null,
+        "state": "submitted",
+        "baseVersion": 1,
+        "submittedBy": "auth0|submitter",
+        "submittedAt": "2026-08-13T05:00:00Z",
+        "reviewedBy": null,
+        "reviewedAt": null,
+        "reviewNote": null,
+        "resultingVersion": null
+      }
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let version = try decoder.decode(VolumeVersionAttributes.self, from: Data(json.utf8))
+    XCTAssertEqual(version.sampleAssetIds, [])
   }
 
   func testAcceptVersionRequestBodyOmittedFieldsMeansAcceptAll() throws {

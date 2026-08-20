@@ -35,6 +35,7 @@ public struct CatalogAPIClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
       }
+      Self.injectTraceContext(into: &request)
       let (data, response) = try await withCheckedThrowingContinuation {
         (continuation: CheckedContinuation<(Data, URLResponse), Error>) in
         let task = session.dataTask(with: request) { data, response, error in
@@ -53,6 +54,15 @@ public struct CatalogAPIClient: Sendable {
       }
       return (data, http.statusCode)
     }
+  }
+
+  /// Injects the currently active span's trace context (if any) as W3C traceparent/tracestate
+  /// headers, so a caller's own request span (e.g. Vapor's TracingMiddleware, if the consuming
+  /// app has one wired up) links across this HTTP hop into catalog-api's own trace. A no-op when
+  /// there's no active span - never fabricates one, and never fails the request either way.
+  private static func injectTraceContext(into request: inout URLRequest) {
+    InstrumentationSystem.instrument.inject(
+      ServiceContext.current ?? .topLevel, into: &request, using: URLRequestInjector())
   }
 
   static func decodeError(_ data: Data, statusCode: Int) -> CatalogAPIError {
@@ -78,13 +88,15 @@ public struct CatalogAPIClient: Sendable {
   }
 
   private func fetchRaw(path: String) async throws -> Data {
-    try await withSpan("fetchRaw") { _ in
+    try await withSpan("fetch-raw") { _ in
       guard let url = URL(string: baseURL + path) else {
         throw URLError(.badURL)
       }
+      var request = URLRequest(url: url)
+      Self.injectTraceContext(into: &request)
       let (data, response) = try await withCheckedThrowingContinuation {
         (continuation: CheckedContinuation<(Data, URLResponse), Error>) in
-        let task = session.dataTask(with: url) { data, response, error in
+        let task = session.dataTask(with: request) { data, response, error in
           if let error {
             continuation.resume(throwing: error)
           } else if let data, let response {
@@ -114,5 +126,14 @@ public struct CatalogAPIClient: Sendable {
       data.split(separator: UInt8(ascii: "\n"), maxSplits: 1, omittingEmptySubsequences: true)
       .first ?? data[...]
     return try JSONDecoder().decode(T.self, from: Data(firstLine))
+  }
+}
+
+/// Lets swift-distributed-tracing's `Instrument.inject(...)` write trace-context headers onto a
+/// plain `URLRequest` - Foundation's HTTP stack has no built-in tracing support the way
+/// AsyncHTTPClient does, so this client has to do it explicitly.
+private struct URLRequestInjector: Injector {
+  func inject(_ value: String, forKey key: String, into request: inout URLRequest) {
+    request.setValue(value, forHTTPHeaderField: key)
   }
 }

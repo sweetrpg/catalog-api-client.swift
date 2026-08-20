@@ -8,7 +8,7 @@ import Tracing
 extension CatalogAPIClient {
 
   public func fetchReviews() async throws -> JSONAPIDocument<ReviewAttributes> {
-    try await withSpan("fetchReviews") { _ in
+    try await withSpan("fetch-reviews") { _ in
       try await fetch(path: "/reviews")
     }
   }

@@ -14,14 +14,14 @@ extension CatalogAPIClient {
   /// different record, or the caller is at their unapproved-submission cap - see
   /// durable-volume-editing in sweetrpg/platform.
   public func finalizeSession(id: String, token: String) async throws -> VolumePatchResult {
-    try await withSpan("finalizeSession") { _ in
+    try await withSpan("finalize-session") { _ in
       let (data, status) = try await send(
         method: "POST", path: "/volumes/\(id)/finalize-session", token: token, body: nil)
       switch status {
       case 200:
         return .applied(try Self.decodeFirstLine(data))
       case 202:
-        return .proposed(try JSONDecoder().decode(ProposedChangeSubmission.self, from: data))
+        return .proposed(try JSONDecoder().decode(SubmittedVersionResponse.self, from: data))
       default:
         throw Self.decodeError(data, statusCode: status)
       }

@@ -11,7 +11,7 @@ extension CatalogAPIClient {
   /// (`/systems`, `/publishers`, `/studios`, `/licenses`) - they all share the same
   /// `NamedAttributes` shape.
   public func fetchNamed(path: String) async throws -> JSONAPIDocument<NamedAttributes> {
-    try await withSpan("fetchNamed") { _ in
+    try await withSpan("fetch-named") { _ in
       try await fetch(path: path)
     }
   }

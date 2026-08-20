@@ -12,7 +12,18 @@ public struct LicenseAttributes: Codable, Sendable {
   public let status: String?
   public let availability: String?
   public let notes: String?
+  public let properties: [PropertyAttributes]?
   public let tags: [TagAttributes]?
+
+  // catalog-api emits snake_case for these two (short_title, legal_code) - without explicit
+  // keys, Codable looks for "shortTitle"/"legalCode" literally, finds neither, and silently
+  // decodes both as nil regardless of the actual response. Confirmed live: both are populated
+  // server-side (e.g. short_title "OGL 1.0a", legal_code holding the full license text).
+  enum CodingKeys: String, CodingKey {
+    case title, version, deed, website, status, availability, notes, properties, tags
+    case shortTitle = "short_title"
+    case legalCode = "legal_code"
+  }
 
   public var displayName: String { title ?? "Untitled" }
 }
