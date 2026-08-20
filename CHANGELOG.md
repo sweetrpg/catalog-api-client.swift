@@ -1,3 +1,15 @@
+## [0.0.13] - 2026-08-20
+
+### 🐛 Bug Fixes
+
+- *(contribution)* Decode roles instead of nonexistent role/credit/title fields
+- *(contribution)* Decode the real roles array, not nonexistent role/credit/title
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v1.0.0
+- *(release)* Merge master into develop after v0.4.0
+- *(release)* Merge master into develop after v0.0.12
 ## [0.0.12] - 2026-08-16
 ## [0.4.0] - 2026-08-19
 
