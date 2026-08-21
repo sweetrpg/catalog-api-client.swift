@@ -75,7 +75,10 @@ public struct CatalogAPIClient: Sendable {
       statusCode: statusCode, error: decoded?.error, message: decoded?.message)
   }
 
-  func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPIDocument<T> {
+  /// Public so a consumer can page through a list endpoint itself (`page[start]`/`page[limit]`
+  /// query params) for an attribute type this package doesn't already have a dedicated
+  /// `fetchX()` method for pagination on - e.g. `fetch(path: "/persons?page[limit]=100&page[start]=100")`.
+  public func fetch<T: Codable & Sendable>(path: String) async throws -> JSONAPIDocument<T> {
     try await withSpan("fetch") { _ in
       try Self.decodeFirstLine(try await fetchRaw(path: path))
     }
