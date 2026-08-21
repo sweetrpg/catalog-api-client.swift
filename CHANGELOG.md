@@ -1,3 +1,13 @@
+## [0.5.0] - 2026-08-21
+
+### 🚀 Features
+
+- Expose the generic paginated fetch<T>(path:) publicly
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.0.13
+- *(release)* Merge master into develop after v0.4.1
 ## [0.4.1] - 2026-08-20
 
 Corrects a mis-versioned release: two independent sessions each fixed the same
