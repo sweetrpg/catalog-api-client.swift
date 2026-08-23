@@ -1,3 +1,12 @@
+## [0.5.1] - 2026-08-23
+
+### 🐛 Bug Fixes
+
+- *(contribution)* Decode singular role attribute
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.5.0
 ## [0.5.0] - 2026-08-21
 
 ### 🚀 Features
