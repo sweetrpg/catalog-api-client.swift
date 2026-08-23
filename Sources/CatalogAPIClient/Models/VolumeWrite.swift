@@ -69,4 +69,5 @@ struct PatchVolumeRequestBody: Encodable {
   let title: String?
   let description: String?
   let notes: String?
+  let tags: [String]?
 }

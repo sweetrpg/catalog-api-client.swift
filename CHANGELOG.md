@@ -1,3 +1,12 @@
+## [0.6.0] - 2026-08-23
+
+### 🚀 Features
+
+- *(client)* Support tags on volume PATCH requests (#35)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.5.1
 ## [0.5.1] - 2026-08-23
 
 ### 🐛 Bug Fixes

@@ -146,12 +146,13 @@ final class CatalogAPIClientTests: XCTestCase {
     // fields are omitted from the JSON entirely rather than written as `null` - either shape
     // decodes to nil on catalog-api's Go side (an absent key and a JSON null both unmarshal to
     // a nil *string), so this just documents the actual wire shape.
-    let body = PatchVolumeRequestBody(title: "New Title", description: nil, notes: nil)
+    let body = PatchVolumeRequestBody(title: "New Title", description: nil, notes: nil, tags: nil)
     let data = try JSONEncoder().encode(body)
     let decoded = try JSONSerialization.jsonObject(with: data) as? [String: Any]
     XCTAssertEqual(decoded?["title"] as? String, "New Title")
     XCTAssertNil(decoded?["description"])
     XCTAssertNil(decoded?["notes"])
+    XCTAssertNil(decoded?["tags"])
   }
 
   func testVolumePatchResultDecodesAppliedResponse() throws {
