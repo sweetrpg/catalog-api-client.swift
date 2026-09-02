@@ -56,7 +56,9 @@ final class CatalogAPIClientTests: XCTestCase {
       """
     let doc: JSONAPIDocument<VolumeAttributes> = try CatalogAPIClient.decodeFirstLine(
       Data(json.utf8))
-    XCTAssertEqual(doc.data[0].attributes.systemTitles, ["sys-a": "Numenera", "sys-b": "The Strange"])
+    XCTAssertEqual(
+      doc.data[0].attributes.systemTitles,
+      ["sys-a": "Numenera", "sys-b": "The Strange"])
   }
 
   func testDecodesVolumeWithoutSystemTitles() throws {
