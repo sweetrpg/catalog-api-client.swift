@@ -1,3 +1,16 @@
+## [0.7.0] - 2026-09-02
+
+### 🚀 Features
+
+- *(volume)* Decode systemTitles on VolumeAttributes
+
+### 🎨 Styling
+
+- *(tests)* Wrap long assertion line to satisfy swift-format LineLength
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.6.0
 ## [0.6.0] - 2026-08-23
 
 ### 🚀 Features
