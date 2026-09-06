@@ -214,6 +214,15 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(stats.volumes.mostRecent?.name, "A Glorious Death")
   }
 
+  func testVolumeTagsResponseDecodesBareArray() throws {
+    // /volumes/tags returns a bare JSON array (most frequent tag first), not a JSON:API doc.
+    let json = """
+      ["Fantasy", "Interplanetary", "Grimdark"]
+      """
+    let tags = try JSONDecoder().decode([String].self, from: Data(json.utf8))
+    XCTAssertEqual(tags, ["Fantasy", "Interplanetary", "Grimdark"])
+  }
+
   func testCatalogStatsDecodesEmptyType() throws {
     let json = """
       {
