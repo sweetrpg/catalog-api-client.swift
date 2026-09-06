@@ -1,3 +1,12 @@
+## [0.8.0] - 2026-09-06
+
+### 🚀 Features
+
+- *(client)* Add fetchVolumeTags(limit:) endpoint
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.7.0
 ## [0.7.0] - 2026-09-02
 
 ### 🚀 Features
