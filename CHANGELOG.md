@@ -1,3 +1,12 @@
+## [0.9.0] - 2026-09-09
+
+### 🚀 Features
+
+- *(jsonapi)* Decode top-level meta.total on list documents
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.8.0
 ## [0.8.0] - 2026-09-06
 
 ### 🚀 Features
