@@ -22,6 +22,24 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(resource.relationships?["publisher"]?.data?.ids, ["pub-1"])
   }
 
+  func testDecodesTopLevelMetaTotal() throws {
+    let json = """
+      {"data": [{"id": "pub-1", "type": "publishers", "attributes": {"name": "Wizards"}, "relationships": null}], "meta": {"total": 42}}
+      """
+    let doc: JSONAPIDocument<NamedAttributes> = try CatalogAPIClient.decodeFirstLine(
+      Data(json.utf8))
+    XCTAssertEqual(doc.meta?.total, 42)
+  }
+
+  func testMetaAbsentDecodesToNil() throws {
+    let json = """
+      {"data": [{"id": "pub-1", "type": "publishers", "attributes": {"name": "Wizards"}, "relationships": null}]}
+      """
+    let doc: JSONAPIDocument<NamedAttributes> = try CatalogAPIClient.decodeFirstLine(
+      Data(json.utf8))
+    XCTAssertNil(doc.meta?.total)
+  }
+
   func testDecodesVolumePropertiesAttribute() throws {
     let json = """
       {"data": [{"id": "vol-1", "type": "volumes", "attributes": {"title": null, "description": null, "notes": null, "tags": null, "properties": [{"name": "Page count", "kind": "string", "value": "320"}]}, "relationships": null}]}
