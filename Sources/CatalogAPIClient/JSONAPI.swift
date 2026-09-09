@@ -12,6 +12,16 @@ public struct JSONAPIDocument<Attributes: Codable & Sendable>: Codable, Sendable
   }
 
   public let data: [Resource]
+
+  /// Top-level `meta`. Optional: only list endpoints that report a filter-matched total set
+  /// it, and older `catalog-api` responses omit it entirely.
+  public let meta: Meta?
+
+  public struct Meta: Codable, Sendable {
+    /// Count of records matching the request's filter, independent of `page[limit]` - lets a
+    /// caller build a pager from one page without fetching the whole collection.
+    public let total: Int?
+  }
 }
 
 public struct JSONAPISingleDocument<Attributes: Codable & Sendable>: Codable, Sendable {
