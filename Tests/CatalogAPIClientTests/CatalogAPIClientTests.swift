@@ -3,6 +3,10 @@ import XCTest
 
 @testable import CatalogAPIClient
 
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+
 final class CatalogAPIClientTests: XCTestCase {
 
   func testDecodesVolumeDocumentWithRelationships() throws {
