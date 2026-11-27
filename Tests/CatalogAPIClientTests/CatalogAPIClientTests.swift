@@ -360,6 +360,14 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertNil(try decoder.decode(LicenseVersionAttributes.self, from: data).submittedBy)
   }
 
+  func testAuthorizationHeaderOnlySentWithToken() throws {
+    var request = URLRequest(url: try XCTUnwrap(URL(string: "http://example.test")))
+    CatalogAPIClient.authorize(&request, token: "")
+    XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+    CatalogAPIClient.authorize(&request, token: "abc")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer abc")
+  }
+
   func testAcceptVersionRequestBodyOmittedFieldsMeansAcceptAll() throws {
     let body = AcceptVersionRequestBody(fields: nil)
     let data = try JSONEncoder().encode(body)
