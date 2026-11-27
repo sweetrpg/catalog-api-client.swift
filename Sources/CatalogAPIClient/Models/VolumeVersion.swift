@@ -20,7 +20,8 @@ public struct VolumeVersionAttributes: Codable, Sendable, Identifiable {
   public let sampleAssetIds: [String]
   public let state: String
   public let baseVersion: Int?
-  public let submittedBy: String
+  /// `nil` when catalog-api does not show it to this caller.
+  public let submittedBy: String?
   public let submittedAt: Date
   public let reviewedBy: String?
   public let reviewedAt: Date?
@@ -30,7 +31,7 @@ public struct VolumeVersionAttributes: Codable, Sendable, Identifiable {
   public init(
     id: String, recordId: String, version: Int, title: String, description: String,
     notes: String, format: String, coverAssetId: String, sampleAssetIds: [String], state: String,
-    baseVersion: Int?, submittedBy: String, submittedAt: Date, reviewedBy: String?,
+    baseVersion: Int?, submittedBy: String?, submittedAt: Date, reviewedBy: String?,
     reviewedAt: Date?, reviewNote: String?, resultingVersion: Int?
   ) {
     self.id = id
@@ -76,7 +77,7 @@ public struct VolumeVersionAttributes: Codable, Sendable, Identifiable {
     sampleAssetIds = try container.decodeIfPresent([String].self, forKey: .sampleAssetIds) ?? []
     state = try container.decode(String.self, forKey: .state)
     baseVersion = try container.decodeIfPresent(Int.self, forKey: .baseVersion)
-    submittedBy = try container.decode(String.self, forKey: .submittedBy)
+    submittedBy = try container.decodeIfPresent(String.self, forKey: .submittedBy)
     submittedAt = try container.decode(Date.self, forKey: .submittedAt)
     reviewedBy = try container.decodeIfPresent(String.self, forKey: .reviewedBy)
     reviewedAt = try container.decodeIfPresent(Date.self, forKey: .reviewedAt)

@@ -337,6 +337,29 @@ final class CatalogAPIClientTests: XCTestCase {
     XCTAssertEqual(version.sampleAssetIds, [])
   }
 
+  func testVersionAttributesDecodeWithoutAuditIdentityFields() throws {
+    let volume = """
+      {"id": "ver-1", "recordId": "vol-1", "version": 1, "title": "T", "description": "",
+       "notes": "", "format": "", "coverAssetId": "", "sampleAssetIds": [], "state": "live",
+       "submittedAt": "2026-08-13T05:00:00Z"}
+      """
+    let entity = """
+      {"id": "ver-1", "recordId": "p-1", "version": 1, "name": "N", "address": "",
+       "notes": "", "title": "T", "shortTitle": "", "licenseVersion": "", "deed": "",
+       "legalCode": "", "status": "", "availability": "", "state": "live",
+       "submittedAt": "2026-08-13T05:00:00Z"}
+      """
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let data = Data(entity.utf8)
+    XCTAssertNil(
+      try decoder.decode(VolumeVersionAttributes.self, from: Data(volume.utf8)).submittedBy)
+    XCTAssertNil(try decoder.decode(PublisherVersionAttributes.self, from: data).submittedBy)
+    XCTAssertNil(try decoder.decode(StudioVersionAttributes.self, from: data).submittedBy)
+    XCTAssertNil(try decoder.decode(PersonVersionAttributes.self, from: data).submittedBy)
+    XCTAssertNil(try decoder.decode(LicenseVersionAttributes.self, from: data).submittedBy)
+  }
+
   func testAcceptVersionRequestBodyOmittedFieldsMeansAcceptAll() throws {
     let body = AcceptVersionRequestBody(fields: nil)
     let data = try JSONEncoder().encode(body)
