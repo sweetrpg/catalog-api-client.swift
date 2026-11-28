@@ -12,4 +12,5 @@ jobs:
     uses: sweetrpg/github-actions/.github/workflows/swift-prepare-release.yaml@master
     with:
       project-number: 8
+      ci-workflow: ci.yml
     secrets: inherit
