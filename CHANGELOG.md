@@ -1,3 +1,22 @@
+## [0.9.1] - 2026-11-28
+
+### 🐛 Bug Fixes
+
+- *(versions)* Decode versions that omit the submitter
+- *(client)* Send no authorization header without a token
+- *(ci)* Point release gate at ci.yml
+
+### 📚 Documentation
+
+- Add the feature work checkpoint pointer
+
+### 🧪 Testing
+
+- *(client)* Import FoundationNetworking on Linux
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Merge master into develop after v0.9.0
 ## [0.9.0] - 2026-09-09
 
 ### 🚀 Features
