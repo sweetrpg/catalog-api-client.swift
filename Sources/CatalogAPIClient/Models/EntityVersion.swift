@@ -10,7 +10,8 @@ public protocol EntityVersionAttributes: Codable, Sendable, Identifiable {
   var recordId: String { get }
   var version: Int { get }
   var state: String { get }
-  var submittedBy: String { get }
+  /// `nil` when catalog-api does not show it to this caller.
+  var submittedBy: String? { get }
   var submittedAt: Date { get }
 }
 
@@ -23,7 +24,7 @@ public struct PublisherVersionAttributes: EntityVersionAttributes {
   public let notes: String
   public let state: String
   public let baseVersion: Int?
-  public let submittedBy: String
+  public let submittedBy: String?
   public let submittedAt: Date
   public let reviewedBy: String?
   public let reviewedAt: Date?
@@ -39,7 +40,7 @@ public struct StudioVersionAttributes: EntityVersionAttributes {
   public let notes: String
   public let state: String
   public let baseVersion: Int?
-  public let submittedBy: String
+  public let submittedBy: String?
   public let submittedAt: Date
   public let reviewedBy: String?
   public let reviewedAt: Date?
@@ -55,7 +56,7 @@ public struct PersonVersionAttributes: EntityVersionAttributes {
   public let notes: String
   public let state: String
   public let baseVersion: Int?
-  public let submittedBy: String
+  public let submittedBy: String?
   public let submittedAt: Date
   public let reviewedBy: String?
   public let reviewedAt: Date?
@@ -77,7 +78,7 @@ public struct LicenseVersionAttributes: EntityVersionAttributes {
   public let notes: String
   public let state: String
   public let baseVersion: Int?
-  public let submittedBy: String
+  public let submittedBy: String?
   public let submittedAt: Date
   public let reviewedBy: String?
   public let reviewedAt: Date?

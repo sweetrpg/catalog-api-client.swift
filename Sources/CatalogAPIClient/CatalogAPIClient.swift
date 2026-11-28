@@ -21,6 +21,12 @@ public struct CatalogAPIClient: Sendable {
     self.session = URLSession(configuration: configuration)
   }
 
+  /// An empty token means a signed-out caller, who sends no header at all.
+  static func authorize(_ request: inout URLRequest, token: String) {
+    guard !token.isEmpty else { return }
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+  }
+
   func send(method: String, path: String, token: String, body: Data?) async throws -> (
     Data, Int
   ) {
@@ -30,7 +36,7 @@ public struct CatalogAPIClient: Sendable {
       }
       var request = URLRequest(url: url)
       request.httpMethod = method
-      request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+      Self.authorize(&request, token: token)
       if let body {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
